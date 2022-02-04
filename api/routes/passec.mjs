@@ -15,6 +15,7 @@ export default (app) => {
     if(!validateAccess(req, res, {permission: "passec.read"})) return;
     let bucket = Bucket.lookup(sanitize(req.params.id))
     if(!bucket) { res.sendStatus(404); return; }
+    if(bucket.related.owner?.id != res.locals.user.id) return res.sendStatus(401);
     res.json(bucket.toObj());
   });
 
@@ -28,6 +29,7 @@ export default (app) => {
     if(!validateAccess(req, res, {permission: "passec.edit"})) return;
     let bucket = Bucket.lookup(sanitize(req.params.id))
     if(!bucket) { res.sendStatus(404); return; }
+    if(bucket.related.owner?.id != res.locals.user.id) return res.sendStatus(401);
     bucket.delete();
     res.json(true);
   });
@@ -36,6 +38,7 @@ export default (app) => {
     if(!validateAccess(req, res, {permission: "passec.edit"})) return;
     let bucket = Bucket.lookup(sanitize(req.params.id))
     if(!bucket) { res.sendStatus(404); return; }
+    if(bucket.related.owner?.id != res.locals.user.id) return res.sendStatus(401);
     
     if(req.body.title !== undefined) bucket.title = req.body.title;
 
@@ -46,6 +49,7 @@ export default (app) => {
     if(!validateAccess(req, res, {permission: "passec.edit"})) return;
     let bucket = Bucket.lookup(sanitize(req.params.id))
     if(!bucket) { res.sendStatus(404); return; }
+    if(bucket.related.owner?.id != res.locals.user.id) return res.sendStatus(401);
     let entry = bucket.addEntry(req.body.content)
     let lastKnownId = (req.body.lastKnownId && !isNaN(req.body.lastKnownId)) ? sanitize(""+req.body.lastKnownId) : null
     res.json((lastKnownId ? bucket.entriesSince(lastKnownId) : [entry]).map(e => e.toObj()));
@@ -55,6 +59,7 @@ export default (app) => {
     if(!validateAccess(req, res, {permission: "passec.edit"})) return;
     let bucket = Bucket.lookup(sanitize(req.params.id))
     if(!bucket) { res.sendStatus(404); return; }
+    if(bucket.related.owner?.id != res.locals.user.id) return res.sendStatus(401);
     let entry = Entry.lookup(sanitize(req.params.entry))
     if(!entry) { res.sendStatus(404); return; }
     res.json(entry.toObjFull());
@@ -64,6 +69,7 @@ export default (app) => {
     if(!validateAccess(req, res, {permission: "passec.read"})) return;
     let bucket = Bucket.lookup(sanitize(req.params.id))
     if(!bucket) { res.sendStatus(404); return; }
+    if(bucket.related.owner?.id != res.locals.user.id) return res.sendStatus(401);
     res.json(bucket.entries().map(e => e.toObj()));
   });
 

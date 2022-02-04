@@ -9,8 +9,7 @@ import "/components/field-edit.mjs"
 import {on, off, fire} from "/system/events.mjs"
 import {state, pushStateQuery, apiURL} from "/system/core.mjs"
 import {showDialog} from "/components/dialog.mjs"
-import { alertDialog } from "../../components/dialog.mjs"
-import { confirmDialog } from "../../components/dialog.mjs"
+import { promptDialog, confirmDialog } from "../../components/dialog.mjs"
 import "/components/data/searchhelp.mjs"
 import CryptoJS from "/libs/aes.js"
 import {uuidv4} from "/libs/uuid.mjs"
@@ -333,7 +332,10 @@ class Element extends HTMLElement {
         case "edit":
           let p = this.passwords.find(p => p.id == entry.id)
           if(!p) continue;
-          Object.assign(p, entry)
+          if(entry.title) p.title = entry.title;
+          if(entry.username) p.username = entry.username;
+          if(entry.password) p.password = entry.password;
+          if(entry.tags) p.tags = entry.tags;
           break;
         case "del":
           this.passwords = this.passwords.filter(p => p.id != entry.id)
@@ -347,7 +349,7 @@ class Element extends HTMLElement {
         <td>${p.title}</td>
         <td>${p.username}</td>
         <td>${p.tags.join(", ")}</td>
-        <td><button class="copy-pw">Copy</button><button class="del-pw">Delete</button></td>
+        <td><button class="copy-pw">Copy</button><button class="edit-pw">Edit</button><button class="del-pw">Delete</button></td>
       </tr>
     `).join("")
 
@@ -359,6 +361,11 @@ class Element extends HTMLElement {
     let p = this.passwords.find(p => p.id == id)
     if(e.target.classList.contains("copy-pw")){
       navigator.clipboard.writeText(p.password)
+    } if(e.target.classList.contains("edit-pw")){
+      let newPw = await promptDialog("Enter new password", p.password)
+      if(newPw){
+        this.addEntry({id, type: "edit", password: newPw})
+      }
     } else if(e.target.classList.contains("del-pw")){
       if(!(await confirmDialog(`Are you sure that you want to delete the password titled "${p.title}"?`))) return;
       this.addEntry({type: "del", id})
