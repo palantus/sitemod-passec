@@ -81,6 +81,7 @@ template.innerHTML = `
       <action-bar-item id="new-btn" class="hidden">New bucket</action-bar-item>
       <action-bar-item id="refresh-btn">Refresh</action-bar-item>
       <action-bar-item id="add-password-btn" class="hidden">Add password</action-bar-item>
+      <action-bar-item id="import-btn" class="hidden">Import</action-bar-item>
   </action-bar>
 
   <div id="container">
@@ -125,6 +126,13 @@ template.innerHTML = `
   <dialog-component title="New bucket" id="new-bucket-dialog">
     <field-component label="Title"><input id="new-bucket-title"></input></field-component>
   </dialog-component>
+
+  <dialog-component title="Import passwords" id="import-dialog">
+    <p>This will import passwords from passec.ahkpro.dk</p>
+    <field-component label="Bucket ID"><input id="import-bucket"></input></field-component>
+    <field-component label="Key/password"><input id="import-key"></input></field-component>
+    <field-component label="New bucket name"><input id="import-title"></input></field-component>
+  </dialog-component>
 `;
 
 class Element extends HTMLElement {
@@ -137,6 +145,7 @@ class Element extends HTMLElement {
     this.refreshData = this.refreshData.bind(this);
     this.newBucket = this.newBucket.bind(this);
     this.newPassword = this.newPassword.bind(this);
+    this.importPasswords = this.importPasswords.bind(this);
     this.queryChanged = this.queryChanged.bind(this);
     this.bucketTabClick = this.bucketTabClick.bind(this)
     this.pwTabClick = this.pwTabClick.bind(this)
@@ -144,6 +153,7 @@ class Element extends HTMLElement {
     
     this.shadowRoot.getElementById("new-btn").addEventListener("click", this.newBucket)
     this.shadowRoot.getElementById("add-password-btn").addEventListener("click", this.newPassword)
+    this.shadowRoot.getElementById("import-btn").addEventListener("click", this.importPasswords)
     this.shadowRoot.getElementById("refresh-btn").addEventListener("click", this.refreshData)
     this.shadowRoot.getElementById('buckets').addEventListener("click", this.bucketTabClick)
     this.shadowRoot.getElementById('passwords').addEventListener("click", this.pwTabClick)
@@ -164,6 +174,7 @@ class Element extends HTMLElement {
     userPermissions().then(permissions => {
       if(permissions.includes("passec.edit")){
         this.shadowRoot.getElementById("new-btn").classList.remove("hidden")
+        this.shadowRoot.getElementById("import-btn").classList.remove("hidden")
       }
     })
 
@@ -226,15 +237,38 @@ class Element extends HTMLElement {
         this.addEntry(val)
       },
       validate: (val) => 
-          !val.title ? "Please fill out title"
-        : !val.password ? "Please fill out password"
+          !val.password ? "Please fill out password"
         : true,
       values: () => {return {
-        title: this.shadowRoot.getElementById("add-title").value,
+        title: this.shadowRoot.getElementById("add-title").value || "N/A",
         username: this.shadowRoot.getElementById("add-username").value,
         password: this.shadowRoot.getElementById("add-password").value,
         tags: this.shadowRoot.getElementById("add-tags").value.split(",").map(t => t.trim()),
         type: "new"
+      }},
+      close: () => {
+        this.shadowRoot.querySelectorAll("field-component input").forEach(e => e.value = '')
+      }
+    })
+  }
+
+  importPasswords(){
+    let dialog = this.shadowRoot.getElementById("import-dialog")
+    
+    showDialog(dialog, {
+      show: () => this.shadowRoot.getElementById("import-bucket").focus(),
+      ok: async (val) => {
+        await api.post(`passec/buckets/import`, val)
+        this.refreshData()
+      },
+      validate: (val) => 
+          !val.bucketId ? "Please fill out bucket"
+        : !val.key ? "Please fill out key"
+        : true,
+      values: () => {return {
+        bucketId: this.shadowRoot.getElementById("import-bucket").value,
+        key: this.shadowRoot.getElementById("import-key").value,
+        title: this.shadowRoot.getElementById("import-title").value
       }},
       close: () => {
         this.shadowRoot.querySelectorAll("field-component input").forEach(e => e.value = '')

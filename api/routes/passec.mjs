@@ -5,6 +5,8 @@ import {sanitize} from "entitystorage";
 import {validateAccess} from "../../../../services/auth.mjs"
 import Bucket from "../../models/bucket.mjs";
 import Entry from "../../models/entry.mjs";
+import fetch from "node-fetch"
+import CryptoJS from "../../www/libs/aes.js"
 
 export default (app) => {
 
@@ -78,4 +80,38 @@ export default (app) => {
     let buckets = Bucket.all(res.locals.user)
     res.json(buckets.map(b => b.toObj()));
   });
+
+  route.post("/import", async (req, res) => {
+    if(!validateAccess(req, res, {permission: "passec.edit"})) return;
+
+    let bucketId = ""+req.body.bucketId
+    let bucketName = ""+req.body.title || "Imported bucket"
+    let bucketPassword = ""+req.body.key
+
+    if(!bucketId) { res.sendStatus(404); return; }
+
+    let rBucket;
+    try{
+      rBucket = await (await fetch(`https://passec.ahkpro.dk/api/getBucket?bucketId=${bucketId}`)).json()
+    } catch(err){
+      console.log(err)
+    }
+    
+    if(!rBucket || !rBucket.success)
+      return res.sendStatus(404);
+
+    let bucket = new Bucket(bucketName, res.locals.user)
+
+    for(let e of rBucket.result.passwords){
+      let decrypted = CryptoJS.AES.decrypt(e, bucketPassword);
+      decrypted = decrypted.toString(CryptoJS.enc.Utf8);
+      if(decrypted.substring(0, 1) != "{") return;
+      decrypted = JSON.parse(decrypted);
+      let type = decrypted.type == -1 ? "del" : decrypted.type == 0 ? "edit" : "new";
+      let obj = {id: decrypted.id, type, title: decrypted.title, username: decrypted.username, password: decrypted.password, tags: decrypted.tags?.split(",").map(t => t.trim())||[]}
+      let encrypted = CryptoJS.AES.encrypt(JSON.stringify(obj), bucketPassword).toString();
+      bucket.addEntry(encrypted)
+    }
+    res.json({success:true})
+  })
 };
