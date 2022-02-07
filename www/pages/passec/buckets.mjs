@@ -51,7 +51,7 @@ template.innerHTML = `
       border-right: solid 1px gray;
     }
     #passwords-tab{margin-top: 5px;}
-    #passwords-tab td{
+    #passwords-tab td:not(:last-child){
       padding-right: 10px;
     }
     #key-container{ border-bottom: 1px solid #ccc; padding-bottom: 8px;}
