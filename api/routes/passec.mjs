@@ -84,34 +84,63 @@ export default (app) => {
   route.post("/import", async (req, res) => {
     if(!validateAccess(req, res, {permission: "passec.edit"})) return;
 
-    let bucketId = ""+req.body.bucketId
-    let bucketName = ""+req.body.title || "Imported bucket"
-    let bucketPassword = ""+req.body.key
+    if(req.body.type == "legacy"){
+      let bucketId = ""+req.body.bucketId
+      let bucketName = ""+req.body.title || "Imported bucket"
+      let bucketPassword = ""+req.body.key
 
-    if(!bucketId) { res.sendStatus(404); return; }
+      if(!bucketId) { res.sendStatus(404); return; }
 
-    let rBucket;
-    try{
-      rBucket = await (await fetch(`https://passec.ahkpro.dk/api/getBucket?bucketId=${bucketId}`)).json()
-    } catch(err){
-      console.log(err)
+      let rBucket;
+      try{
+        rBucket = await (await fetch(`https://passec.ahkpro.dk/api/getBucket?bucketId=${bucketId}`)).json()
+      } catch(err){
+        console.log(err)
+      }
+      
+      if(!rBucket || !rBucket.success)
+        return res.sendStatus(404);
+
+      let bucket = new Bucket(bucketName, res.locals.user)
+
+      for(let e of rBucket.result.passwords){
+        let decrypted;
+        try{
+          let decrypted = CryptoJS.AES.decrypt(e, bucketPassword);
+          decrypted = decrypted.toString(CryptoJS.enc.Utf8);
+        } catch(err){
+          continue;
+        }
+        if(decrypted.substring(0, 1) != "{") continue;
+        decrypted = JSON.parse(decrypted);
+        let type = decrypted.type == -1 ? "del" : decrypted.type == 0 ? "edit" : "new";
+        let obj = {id: decrypted.id, type, title: decrypted.title, username: decrypted.username, password: decrypted.password, tags: decrypted.tags?.split(",").map(t => t.trim())||[]}
+        let encrypted = CryptoJS.AES.encrypt(JSON.stringify(obj), bucketPassword).toString();
+        bucket.addEntry(encrypted)
+      }
+      res.json({success:true})
+    } else if(req.body.type == "json"){
+      try{
+        let json = ""+req.body.json
+        let buckets = JSON.parse(json)
+        if(!Array.isArray(buckets)) throw "Must be an array"
+        for(let b of buckets){
+          if(!b.items || !Array.isArray(b.items)) continue;
+
+          let bucket = new Bucket((b.title || "New bucket").substring(0, 500), res.locals.user)
+
+          let items = b.items.filter(i => !isNaN(i.id) && i.content && typeof i.content === "string" && i.content.length < 1000)
+                             .sort((a, b) => a.id - b.id)
+
+          for(let i of items){
+            bucket.addEntry(i.content)
+          }
+        }
+        res.json({success:true})
+      } catch(err){
+        console.log(err)
+        res.sendStatus(501)
+      }
     }
-    
-    if(!rBucket || !rBucket.success)
-      return res.sendStatus(404);
-
-    let bucket = new Bucket(bucketName, res.locals.user)
-
-    for(let e of rBucket.result.passwords){
-      let decrypted = CryptoJS.AES.decrypt(e, bucketPassword);
-      decrypted = decrypted.toString(CryptoJS.enc.Utf8);
-      if(decrypted.substring(0, 1) != "{") return;
-      decrypted = JSON.parse(decrypted);
-      let type = decrypted.type == -1 ? "del" : decrypted.type == 0 ? "edit" : "new";
-      let obj = {id: decrypted.id, type, title: decrypted.title, username: decrypted.username, password: decrypted.password, tags: decrypted.tags?.split(",").map(t => t.trim())||[]}
-      let encrypted = CryptoJS.AES.encrypt(JSON.stringify(obj), bucketPassword).toString();
-      bucket.addEntry(encrypted)
-    }
-    res.json({success:true})
   })
 };

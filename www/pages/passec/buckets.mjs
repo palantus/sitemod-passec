@@ -82,6 +82,7 @@ template.innerHTML = `
       <action-bar-item id="refresh-btn">Refresh</action-bar-item>
       <action-bar-item id="add-password-btn" class="hidden">Add password</action-bar-item>
       <action-bar-item id="import-btn" class="hidden">Import</action-bar-item>
+      <action-bar-item id="export-btn" class="hidden">Export</action-bar-item>
   </action-bar>
 
   <div id="container">
@@ -128,10 +129,21 @@ template.innerHTML = `
   </dialog-component>
 
   <dialog-component title="Import passwords" id="import-dialog">
-    <p>This will import passwords from passec.ahkpro.dk</p>
-    <field-component label="Bucket ID"><input id="import-bucket"></input></field-component>
-    <field-component label="Key/password"><input id="import-key"></input></field-component>
-    <field-component label="New bucket name"><input id="import-title"></input></field-component>
+    <select id="import-type">
+      <option value="json" selected>JSON file</option>
+      <option value="legacy">Legacy Passec (passec.ahkpro.dk)</option>
+    </select>
+
+    <div id="fields-legacy" class="hidden">
+      <p>This will import passwords from passec.ahkpro.dk</p>
+      <field-component label="Bucket ID"><input id="import-bucket"></input></field-component>
+      <field-component label="Key/password"><input id="import-key"></input></field-component>
+      <field-component label="New bucket name"><input id="import-title"></input></field-component>
+    </div>
+    <div id="fields-json">
+      <p>Paste a JSON backup into the following text field. This will import all buckets in that file as new buckets.</p>
+      <textarea id="import-json"></textarea>
+    </div>
   </dialog-component>
 `;
 
@@ -146,6 +158,7 @@ class Element extends HTMLElement {
     this.newBucket = this.newBucket.bind(this);
     this.newPassword = this.newPassword.bind(this);
     this.importPasswords = this.importPasswords.bind(this);
+    this.exportPasswords = this.exportPasswords.bind(this);
     this.queryChanged = this.queryChanged.bind(this);
     this.bucketTabClick = this.bucketTabClick.bind(this)
     this.pwTabClick = this.pwTabClick.bind(this)
@@ -154,11 +167,17 @@ class Element extends HTMLElement {
     this.shadowRoot.getElementById("new-btn").addEventListener("click", this.newBucket)
     this.shadowRoot.getElementById("add-password-btn").addEventListener("click", this.newPassword)
     this.shadowRoot.getElementById("import-btn").addEventListener("click", this.importPasswords)
+    this.shadowRoot.getElementById("export-btn").addEventListener("click", this.exportPasswords)
     this.shadowRoot.getElementById("refresh-btn").addEventListener("click", this.refreshData)
     this.shadowRoot.getElementById('buckets').addEventListener("click", this.bucketTabClick)
     this.shadowRoot.getElementById('passwords').addEventListener("click", this.pwTabClick)
     this.shadowRoot.getElementById('key').addEventListener("change", this.keyChanged)
     this.shadowRoot.getElementById('cache-key').addEventListener("change", this.keyChanged)
+    this.shadowRoot.getElementById('import-type').addEventListener("change", () => {
+      let type = this.shadowRoot.getElementById("import-type").value
+      this.shadowRoot.getElementById("fields-legacy").classList.toggle("hidden", type != "legacy")
+      this.shadowRoot.getElementById("fields-json").classList.toggle("hidden", type != "json")
+    })
 
     this.searchDelayTimer = null;
     this.shadowRoot.getElementById('search').addEventListener("input", () => {
@@ -175,6 +194,7 @@ class Element extends HTMLElement {
       if(permissions.includes("passec.edit")){
         this.shadowRoot.getElementById("new-btn").classList.remove("hidden")
         this.shadowRoot.getElementById("import-btn").classList.remove("hidden")
+        this.shadowRoot.getElementById("export-btn").classList.remove("hidden")
       }
     })
 
@@ -297,18 +317,27 @@ class Element extends HTMLElement {
         this.refreshData()
       },
       validate: (val) => 
-          !val.bucketId ? "Please fill out bucket"
-        : !val.key ? "Please fill out key"
+          (val.type == "legacy" && !val.bucketId) ? "Please fill out bucket"
+        : (val.type == "legacy" && !val.key) ? "Please fill out key"
+        : (val.type == "json" && !val.json) ? "Please fill out JSON"
         : true,
       values: () => {return {
         bucketId: this.shadowRoot.getElementById("import-bucket").value,
         key: this.shadowRoot.getElementById("import-key").value,
-        title: this.shadowRoot.getElementById("import-title").value
+        title: this.shadowRoot.getElementById("import-title").value,
+        type: this.shadowRoot.getElementById("import-type").value,
+        json: this.shadowRoot.getElementById("import-json").value
       }},
       close: () => {
         this.shadowRoot.querySelectorAll("field-component input").forEach(e => e.value = '')
       }
     })
+  }
+  
+  async exportPasswords(){
+    if(!(await confirmDialog(`This will open a new window with a JSON file. Download that as a backup.`))) return;
+    let {token} = await api.get("me/token")
+    window.open(`${apiURL()}/passec/buckets?token=${token}`)
   }
 
   async bucketTabClick(e){
