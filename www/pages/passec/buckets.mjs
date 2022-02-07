@@ -95,11 +95,11 @@ template.innerHTML = `
         <h2>Passwords in <span id="bucket-title"></span></h2>
         <div id="key-container">
           <label for="key">Key: </label>
-          <input id="key" type="password" placeholder="Enter key to decrypt">
+          <input id="key" type="password" autocomplete="off" placeholder="Enter key to decrypt">
           <input id="cache-key" title="This will store the encryption key in your browser, so you don't have to enter it every time" type="checkbox">
           <label for="cache-key">Cache key</label>
         </div>
-        <input id="search" type="text" placeholder="Enter query" value=""></input>
+        <input id="search" autocomplete="off" type="text" placeholder="Enter query" value=""></input>
 
         <table id="passwords-tab">
           <thead>
@@ -252,6 +252,41 @@ class Element extends HTMLElement {
     })
   }
 
+  editPassword(password){
+    let dialog = this.shadowRoot.getElementById("new-password-dialog")
+    
+    this.shadowRoot.getElementById("add-title").value = password.title
+    this.shadowRoot.getElementById("add-username").value = password.username
+    this.shadowRoot.getElementById("add-password").value = password.password
+    this.shadowRoot.getElementById("add-tags").value = password.tags.join(", ")
+
+    showDialog(dialog, {
+      show: () => this.shadowRoot.getElementById("add-title").focus(),
+      ok: async (val) => {
+        if(val.title === password.title) delete val.title;
+        if(val.username === password.username) delete val.username;
+        if(val.password === password.password) delete val.password;
+        if(val.tags.join("") === password.tags.join("")) delete val.tags;
+        console.log(val)
+        this.addEntry(val)
+      },
+      validate: (val) => 
+          !val.password ? "Please fill out password"
+        : true,
+      values: () => {return {
+        title: this.shadowRoot.getElementById("add-title").value || "N/A",
+        username: this.shadowRoot.getElementById("add-username").value,
+        password: this.shadowRoot.getElementById("add-password").value,
+        tags: this.shadowRoot.getElementById("add-tags").value.split(",").map(t => t.trim()),
+        type: "edit",
+        id: password.id
+      }},
+      close: () => {
+        this.shadowRoot.querySelectorAll("field-component input").forEach(e => e.value = '')
+      }
+    })
+  }
+
   importPasswords(){
     let dialog = this.shadowRoot.getElementById("import-dialog")
     
@@ -366,10 +401,10 @@ class Element extends HTMLElement {
         case "edit":
           let p = this.passwords.find(p => p.id == entry.id)
           if(!p) continue;
-          if(entry.title) p.title = entry.title;
-          if(entry.username) p.username = entry.username;
-          if(entry.password) p.password = entry.password;
-          if(entry.tags) p.tags = entry.tags;
+          if(entry.title !== undefined) p.title = entry.title;
+          if(entry.username !== undefined) p.username = entry.username;
+          if(entry.password !== undefined) p.password = entry.password;
+          if(entry.tags !== undefined) p.tags = entry.tags;
           break;
         case "del":
           this.passwords = this.passwords.filter(p => p.id != entry.id)
@@ -396,10 +431,7 @@ class Element extends HTMLElement {
     if(e.target.classList.contains("copy-pw")){
       navigator.clipboard.writeText(p.password)
     } if(e.target.classList.contains("edit-pw")){
-      let newPw = await promptDialog("Enter new password", p.password)
-      if(newPw){
-        this.addEntry({id, type: "edit", password: newPw})
-      }
+      this.editPassword(p)
     } else if(e.target.classList.contains("del-pw")){
       if(!(await confirmDialog(`Are you sure that you want to delete the password titled "${p.title}"?`))) return;
       this.addEntry({type: "del", id})
