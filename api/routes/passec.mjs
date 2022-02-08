@@ -111,7 +111,7 @@ export default (app) => {
         } catch(err){
           continue;
         }
-        if(decrypted.substring(0, 1) != "{") continue;
+        if(!decrypted || decrypted.substring(0, 1) != "{") continue;
         decrypted = JSON.parse(decrypted);
         let type = decrypted.type == -1 ? "del" : decrypted.type == 0 ? "edit" : "new";
         let obj = {id: decrypted.id, type, title: decrypted.title, username: decrypted.username, password: decrypted.password, tags: decrypted.tags?.split(",").map(t => t.trim())||[]}
