@@ -97,7 +97,7 @@ export default (app) => {
       } catch(err){
         console.log(err)
       }
-      
+
       if(!rBucket || !rBucket.success)
         return res.sendStatus(404);
 
@@ -106,11 +106,12 @@ export default (app) => {
       for(let e of rBucket.result.passwords){
         let decrypted;
         try{
-          let decrypted = CryptoJS.AES.decrypt(e, bucketPassword);
+          decrypted = CryptoJS.AES.decrypt(e, bucketPassword);
           decrypted = decrypted.toString(CryptoJS.enc.Utf8);
         } catch(err){
           continue;
         }
+        
         if(!decrypted || decrypted.substring(0, 1) != "{") continue;
         decrypted = JSON.parse(decrypted);
         let type = decrypted.type == -1 ? "del" : decrypted.type == 0 ? "edit" : "new";
