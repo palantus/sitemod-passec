@@ -442,7 +442,8 @@ class Element extends HTMLElement {
       }
     }
 
-    this.shadowRoot.getElementById("passwords").innerHTML = this.passwords.filter(p => (p.title+p.password+p.username+p.tags.join("")).toLowerCase().includes(this.lastQuery))
+    this.shadowRoot.getElementById("passwords").innerHTML = this.passwords.filter(p => !this.lastQuery || (p.title+p.password+p.username+p.tags.join("")).toLowerCase().includes(this.lastQuery))
+                                                                          .sort((a, b) => a.title < b.title ? -1 : 1)
                                                                           .map(p => `
       <tr class="result password" data-id="${p.id}">
         <td>${p.title}</td>
