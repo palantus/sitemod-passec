@@ -7,6 +7,7 @@ import "/components/action-bar-item.mjs"
 import "/components/field-ref.mjs"
 import "/components/field.mjs"
 import "/components/field-edit.mjs"
+import "/components/action-bar-menu.mjs"
 import {on, off, fire} from "/system/events.mjs"
 import {state, pushStateQuery, apiURL} from "/system/core.mjs"
 import {showDialog} from "/components/dialog.mjs"
@@ -80,10 +81,14 @@ template.innerHTML = `
 
   <action-bar>
       <action-bar-item id="new-btn" class="hidden">New bucket</action-bar-item>
-      <action-bar-item id="refresh-btn">Refresh</action-bar-item>
       <action-bar-item id="add-password-btn" class="hidden">Add password</action-bar-item>
-      <action-bar-item id="import-btn" class="hidden">Import</action-bar-item>
-      <action-bar-item id="export-btn" class="hidden">Export</action-bar-item>
+
+      <action-bar-item id="options-menu">
+        <action-bar-menu label="Options">
+          <button id="import-btn" class="hidden">Import</button>
+          <button id="export-btn" class="hidden">Export</button>
+        </action-bar-menu>
+      </action-bar-item>
   </action-bar>
 
   <div id="container">
@@ -169,7 +174,6 @@ class Element extends HTMLElement {
     this.shadowRoot.getElementById("add-password-btn").addEventListener("click", this.newPassword)
     this.shadowRoot.getElementById("import-btn").addEventListener("click", this.importPasswords)
     this.shadowRoot.getElementById("export-btn").addEventListener("click", this.exportPasswords)
-    this.shadowRoot.getElementById("refresh-btn").addEventListener("click", this.refreshData)
     this.shadowRoot.getElementById('buckets').addEventListener("click", this.bucketTabClick)
     this.shadowRoot.getElementById('passwords').addEventListener("click", this.pwTabClick)
     this.shadowRoot.getElementById('key').addEventListener("change", this.keyChanged)
