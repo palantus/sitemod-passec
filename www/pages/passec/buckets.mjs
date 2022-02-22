@@ -292,7 +292,6 @@ class Element extends HTMLElement {
         if(val.username === password.username) delete val.username;
         if(val.password === password.password) delete val.password;
         if(val.tags.join("") === password.tags.join("")) delete val.tags;
-        console.log(val)
         this.addEntry(val)
       },
       validate: (val) => 
