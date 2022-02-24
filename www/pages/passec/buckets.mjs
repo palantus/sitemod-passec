@@ -56,6 +56,9 @@ template.innerHTML = `
     #passwords-tab td:not(:last-child){
       padding-right: 10px;
     }
+    #passwords-tab td:last-child{
+      white-space: nowrap;
+    }
     #key-container{ border-bottom: 1px solid #ccc; padding-bottom: 8px;}
     .password button{padding: 3px;}
 
