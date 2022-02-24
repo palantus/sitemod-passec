@@ -126,7 +126,10 @@ template.innerHTML = `
   <dialog-component title="New password" id="new-password-dialog">
     <field-component label="Title"><input id="add-title"></input></field-component>
     <field-component label="Username"><input id="add-username"></input></field-component>
-    <field-component label="Password"><input id="add-password"></input></field-component>
+    <div style="display: flex">
+      <field-component label="Password"><input id="add-password"></input></field-component>
+      <button id="randomize-pwd">Gen</button>
+    </div>
     <field-component label="Tags"><input id="add-tags"></input></field-component>
   </dialog-component>
 
@@ -183,6 +186,7 @@ class Element extends HTMLElement {
       this.shadowRoot.getElementById("fields-legacy").classList.toggle("hidden", type != "legacy")
       this.shadowRoot.getElementById("fields-json").classList.toggle("hidden", type != "json")
     })
+    this.shadowRoot.getElementById("randomize-pwd").addEventListener("click", ({target}) => target.parentElement.querySelector("input").value = this.generatePassword());
 
     this.searchDelayTimer = null;
     this.shadowRoot.getElementById('search').addEventListener("input", () => {
@@ -208,7 +212,8 @@ class Element extends HTMLElement {
 
   async refreshData(){
     let buckets = await api.get("passec/buckets")
-    this.shadowRoot.getElementById("buckets").innerHTML = buckets.map(b => `
+    this.shadowRoot.getElementById("buckets").innerHTML = buckets.sort((a, b) => a.title?.toLowerCase() < b.title?.toLowerCase() ? -1 : 1)
+                                                                 .map(b => `
       <div class="bucket" data-bucketid="${b.id}">
         <div class="itemtextcontainer">
           <span class="itemtext title" tabindex=0>${b.title}</span>
@@ -483,6 +488,16 @@ class Element extends HTMLElement {
     off("changed-page", elementName)
     off("changed-page-query", elementName)
   }
+
+  generatePassword() {
+    let length = 20,
+        charset = "abcdefghijklnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789&#_-",
+        retVal = "";
+    for (let i = 0, n = charset.length; i < length; ++i) {
+      retVal += charset.charAt(Math.floor(Math.random() * n));
+    }
+    return retVal;
+}
 }
 
 window.customElements.define(elementName, Element);
