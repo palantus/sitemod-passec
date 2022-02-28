@@ -15,6 +15,7 @@ import { promptDialog, confirmDialog } from "../../components/dialog.mjs"
 import "/components/data/searchhelp.mjs"
 import CryptoJS from "/libs/aes.js"
 import {uuidv4} from "/libs/uuid.mjs"
+import {fireSelfSync, onMessage, offMessage} from "/system/message.mjs"
 
 const template = document.createElement('template');
 template.innerHTML = `
@@ -427,6 +428,11 @@ class Element extends HTMLElement {
     let response = await api.post(`passec/buckets/${this.curBucketId}/entries`, {content: encrypted, lastKnownId: this.entries.slice(-1)?.[0]?.id||null})
     this.entries.push(...response)
     this.refreshPasswordsView();
+    fireSelfSync("passec-edit", {id})
+  }
+
+  async checkForNewEntries(){
+    
   }
 
   refreshPasswordsView(){
@@ -483,13 +489,15 @@ class Element extends HTMLElement {
   connectedCallback() {
     this.shadowRoot.getElementById('search').focus();
     this.queryChanged(state().query.filter||"");
-    on("changed-page", elementName, this.refreshData)
+    on("changed-page", elementName, this.checkForNewEntries)
     on("changed-page-query", elementName, (query) => this.queryChanged(query.filter || ""))
+    onMessage("passec-edit", elementName, this.checkForNewEntries)
   }
 
   disconnectedCallback() {
     off("changed-page", elementName)
     off("changed-page-query", elementName)
+    offMessage("passec-edit", elementName)
   }
 
   generatePassword() {
