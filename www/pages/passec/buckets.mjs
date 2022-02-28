@@ -176,6 +176,7 @@ class Element extends HTMLElement {
     this.bucketTabClick = this.bucketTabClick.bind(this)
     this.pwTabClick = this.pwTabClick.bind(this)
     this.keyChanged = this.keyChanged.bind(this)
+    this.checkForNewEntries = this.checkForNewEntries.bind(this)
     
     this.shadowRoot.getElementById("new-btn").addEventListener("click", this.newBucket)
     this.shadowRoot.getElementById("add-password-btn").addEventListener("click", this.newPassword)
@@ -215,7 +216,7 @@ class Element extends HTMLElement {
   }
 
   async refreshData(){
-    let buckets = await api.get("passec/buckets")
+    let buckets = this.buckets = await api.get("passec/buckets")
     this.shadowRoot.getElementById("buckets").innerHTML = buckets.sort((a, b) => a.title?.toLowerCase() < b.title?.toLowerCase() ? -1 : 1)
                                                                  .map(b => `
       <div class="bucket" data-bucketid="${b.id}">
@@ -432,7 +433,15 @@ class Element extends HTMLElement {
   }
 
   async checkForNewEntries(){
-    
+    if(!this.curBucketId || !this.entries) return;
+    let lastKnownId = this.entries.reduce((max, cur) => Math.max(cur.id, max), -1)
+    let response = await api.get(`passec/buckets/${this.curBucketId}/entries/since/${lastKnownId}`)
+    this.entries.push(...response)
+    this.refreshPasswordsView();
+
+    let buckets = await api.get("passec/buckets")
+    if(this.buckets.find(b => !buckets.find(bNew => bNew.id == b.id)))
+      this.refreshData()
   }
 
   refreshPasswordsView(){

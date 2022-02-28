@@ -67,6 +67,14 @@ export default (app) => {
     res.json(entry.toObjFull());
   });
 
+  route.get("/:id/entries/since/:since", (req, res) => {
+    if(!validateAccess(req, res, {permission: "passec.read"})) return;
+    let bucket = Bucket.lookup(sanitize(req.params.id))
+    if(!bucket) { res.sendStatus(404); return; }
+    if(isNaN(req.params.since)) throw "Unknown since id"
+    res.json(bucket.entriesSince(parseInt(sanitize(req.params.since))).map(e => e.toObj()));
+  })
+
   route.get('/:id/entries', function (req, res, next) {
     if(!validateAccess(req, res, {permission: "passec.read"})) return;
     let bucket = Bucket.lookup(sanitize(req.params.id))
