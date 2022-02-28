@@ -136,6 +136,24 @@ template.innerHTML = `
     </div>
     <field-component label="Tags"><input id="add-tags"></input></field-component>
   </dialog-component>
+  
+  <dialog-component title="Edit password" id="edit-password-dialog">
+    <field-component label="Title"><input id="edit-title"></input></field-component>
+    <field-component label="Username"><input id="edit-username"></input></field-component>
+    <div style="display: flex">
+      <field-component label="Password"><input id="edit-password"></input></field-component>
+      <button id="randomize-pwd">Gen</button>
+    </div>
+    <field-component label="Tags"><input id="edit-tags"></input></field-component>
+
+    <div id="history">
+      <p>Previous passwords (most recent in top):</p>
+      <table>
+        <tbody id="historybody">
+        </tbody>
+      </table>
+    </div>
+  </dialog-component>
 
   <dialog-component title="New bucket" id="new-bucket-dialog">
     <field-component label="Title"><input id="new-bucket-title"></input></field-component>
@@ -265,7 +283,7 @@ class Element extends HTMLElement {
 
   newPassword(){
     let dialog = this.shadowRoot.getElementById("new-password-dialog")
-    
+
     showDialog(dialog, {
       show: () => this.shadowRoot.getElementById("add-title").focus(),
       ok: async (val) => {
@@ -288,15 +306,23 @@ class Element extends HTMLElement {
   }
 
   editPassword(password){
-    let dialog = this.shadowRoot.getElementById("new-password-dialog")
+    let dialog = this.shadowRoot.getElementById("edit-password-dialog")
     
-    this.shadowRoot.getElementById("add-title").value = password.title
-    this.shadowRoot.getElementById("add-username").value = password.username
-    this.shadowRoot.getElementById("add-password").value = password.password
-    this.shadowRoot.getElementById("add-tags").value = password.tags.join(", ")
+    this.shadowRoot.getElementById("edit-title").value = password.title
+    this.shadowRoot.getElementById("edit-username").value = password.username
+    this.shadowRoot.getElementById("edit-password").value = password.password
+    this.shadowRoot.getElementById("edit-tags").value = password.tags.join(", ")
+
+    console.log(password.id)
+    console.log(this.entries.map(e => e.decrypted).filter(e => e && e.id == password.id))
+
+    this.shadowRoot.getElementById("historybody").innerHTML = this.entries.filter(e => e.decrypted && e.decrypted.id == password.id && e.decrypted.password && e.decrypted.password != password.password)
+                                                                          .map(e => `<tr><td>${e.decrypted.password}</td></tr>`)
+                                                                          .reverse()
+                                                                          .join("")
 
     showDialog(dialog, {
-      show: () => this.shadowRoot.getElementById("add-title").focus(),
+      show: () => this.shadowRoot.getElementById("edit-title").focus(),
       ok: async (val) => {
         if(val.title === password.title) delete val.title;
         if(val.username === password.username) delete val.username;
@@ -308,10 +334,10 @@ class Element extends HTMLElement {
           !val.password ? "Please fill out password"
         : true,
       values: () => {return {
-        title: this.shadowRoot.getElementById("add-title").value || "N/A",
-        username: this.shadowRoot.getElementById("add-username").value,
-        password: this.shadowRoot.getElementById("add-password").value,
-        tags: this.shadowRoot.getElementById("add-tags").value.split(",").map(t => t.trim()),
+        title: this.shadowRoot.getElementById("edit-title").value || "N/A",
+        username: this.shadowRoot.getElementById("edit-username").value,
+        password: this.shadowRoot.getElementById("edit-password").value,
+        tags: this.shadowRoot.getElementById("edit-tags").value.split(",").map(t => t.trim()),
         type: "edit",
         id: password.id
       }},
@@ -452,7 +478,7 @@ class Element extends HTMLElement {
       let entry = e.decrypted;
       switch(entry.type){
         case "new":
-          this.passwords.push(entry)
+          this.passwords.push({...entry})
           break;
         case "edit":
           let p = this.passwords.find(p => p.id == entry.id)
@@ -467,6 +493,8 @@ class Element extends HTMLElement {
           break;
       }
     }
+
+    console.log(this.passwords)
 
     this.shadowRoot.getElementById("passwords").innerHTML = this.passwords.filter(p => !this.lastQuery || (p.title+p.password+p.username+p.tags.join("")).toLowerCase().includes(this.lastQuery))
                                                                           .sort((a, b) => a.title?.toLowerCase() < b.title?.toLowerCase() ? -1 : 1)
