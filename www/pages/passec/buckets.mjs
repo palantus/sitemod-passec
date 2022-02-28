@@ -313,13 +313,11 @@ class Element extends HTMLElement {
     this.shadowRoot.getElementById("edit-password").value = password.password
     this.shadowRoot.getElementById("edit-tags").value = password.tags.join(", ")
 
-    console.log(password.id)
-    console.log(this.entries.map(e => e.decrypted).filter(e => e && e.id == password.id))
-
     this.shadowRoot.getElementById("historybody").innerHTML = this.entries.filter(e => e.decrypted && e.decrypted.id == password.id && e.decrypted.password && e.decrypted.password != password.password)
                                                                           .map(e => `<tr><td>${e.decrypted.password}</td></tr>`)
                                                                           .reverse()
                                                                           .join("")
+    this.shadowRoot.getElementById("history").classList.toggle("hidden", !!!this.shadowRoot.getElementById("historybody").innerHTML)
 
     showDialog(dialog, {
       show: () => this.shadowRoot.getElementById("edit-title").focus(),
@@ -493,8 +491,6 @@ class Element extends HTMLElement {
           break;
       }
     }
-
-    console.log(this.passwords)
 
     this.shadowRoot.getElementById("passwords").innerHTML = this.passwords.filter(p => !this.lastQuery || (p.title+p.password+p.username+p.tags.join("")).toLowerCase().includes(this.lastQuery))
                                                                           .sort((a, b) => a.title?.toLowerCase() < b.title?.toLowerCase() ? -1 : 1)
