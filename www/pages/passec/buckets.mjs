@@ -209,7 +209,7 @@ class Element extends HTMLElement {
       this.shadowRoot.getElementById("fields-legacy").classList.toggle("hidden", type != "legacy")
       this.shadowRoot.getElementById("fields-json").classList.toggle("hidden", type != "json")
     })
-    this.shadowRoot.getElementById("randomize-pwd").addEventListener("click", ({target}) => target.parentElement.querySelector("input").value = this.generatePassword());
+    this.shadowRoot.querySelectorAll("button.randomize-pwd").forEach(e => e.addEventListener("click", ({target}) => target.parentElement.querySelector("input").value = this.generatePassword()));
 
     this.searchDelayTimer = null;
     this.shadowRoot.getElementById('search').addEventListener("input", () => {
