@@ -132,7 +132,7 @@ template.innerHTML = `
     <field-component label="Username"><input id="add-username"></input></field-component>
     <div style="display: flex">
       <field-component label="Password"><input id="add-password"></input></field-component>
-      <button id="randomize-pwd">Gen</button>
+      <button class="randomize-pwd">Gen</button>
     </div>
     <field-component label="Tags"><input id="add-tags"></input></field-component>
   </dialog-component>
@@ -142,7 +142,7 @@ template.innerHTML = `
     <field-component label="Username"><input id="edit-username"></input></field-component>
     <div style="display: flex">
       <field-component label="Password"><input id="edit-password"></input></field-component>
-      <button id="randomize-pwd">Gen</button>
+      <button class="randomize-pwd">Gen</button>
     </div>
     <field-component label="Tags"><input id="edit-tags"></input></field-component>
 
