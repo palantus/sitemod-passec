@@ -1,4 +1,4 @@
-import Entity from "entitystorage"
+import Entity, {query} from "entitystorage"
 import Entry from "./entry.mjs";
 
 export default class Bucket extends Entity {
@@ -11,11 +11,11 @@ export default class Bucket extends Entity {
 
   static lookup(id) {
     if(!id) return null;
-    return Bucket.find(`id:"${id}" tag:passec-bucket`)
+    return query.type(Bucket).id(id).tag("passec-bucket").first
   }
 
   static all(user){
-    return Bucket.search(`tag:passec-bucket owner.id:${user}`)
+    return query.type(Bucket).tag("passec-bucket").relatedTo(user, "owner").all
   }
 
   entries(){

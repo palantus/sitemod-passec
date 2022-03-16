@@ -1,4 +1,4 @@
-import Entity, {nextNum} from "entitystorage"
+import Entity, {nextNum, query} from "entitystorage"
 
 export default class Entry extends Entity {
   initNew(content) {
@@ -9,7 +9,7 @@ export default class Entry extends Entity {
 
   static lookup(id) {
     if(!id) return null;
-    return Entry.find(`id:"${id}" tag:passec-entry`)
+    return query.type(Entry).id(id).tag("passec-entry").first
   }
 
   toObj() {
