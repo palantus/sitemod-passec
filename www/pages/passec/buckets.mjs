@@ -510,8 +510,8 @@ class Element extends HTMLElement {
 
     this.shadowRoot.getElementById("add-password-btn").classList.remove("hidden")
 
-    this.shadowRoot.getElementById("taglist").innerHTML = [...new Set(this.passwords.filter(p => p.tags && p.tags.length > 0).map(p => p.tags).flat())].map(t => `<option id="${t}">${t}</option>`).join("")
-    this.shadowRoot.getElementById("usernamelist").innerHTML = [...new Set(this.passwords.filter(p => p.username).map(p => p.username))].map(t => `<option id="${t}">${t}</option>`).join("")
+    this.shadowRoot.getElementById("taglist").innerHTML = [...new Set(this.passwords.filter(p => p.tags && p.tags.length > 0).map(p => p.tags).flat())].sort((a, b) => a.toLowerCase() < b.toLowerCase() ? -1 : 1).map(t => `<option id="${t}">${t}</option>`).join("")
+    this.shadowRoot.getElementById("usernamelist").innerHTML = [...new Set(this.passwords.filter(p => p.username).map(p => p.username))].sort((a, b) => a.toLowerCase() < b.toLowerCase() ? -1 : 1).map(t => `<option id="${t}">${t}</option>`).join("")
   }
   async pwTabClick(e){
     let div = e.target.closest("tr.result");
