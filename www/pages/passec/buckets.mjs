@@ -129,22 +129,22 @@ template.innerHTML = `
   
   <dialog-component title="New password" id="new-password-dialog">
     <field-component label="Title"><input id="add-title"></input></field-component>
-    <field-component label="Username"><input id="add-username"></input></field-component>
+    <field-component label="Username"><input id="add-username" list="usernamelist"></input></field-component>
     <div style="display: flex">
       <field-component label="Password"><input id="add-password"></input></field-component>
       <button class="randomize-pwd">Gen</button>
     </div>
-    <field-component label="Tags"><input id="add-tags"></input></field-component>
+    <field-component label="Tags"><input id="add-tags" list="taglist"></input></field-component>
   </dialog-component>
   
   <dialog-component title="Edit password" id="edit-password-dialog">
     <field-component label="Title"><input id="edit-title"></input></field-component>
-    <field-component label="Username"><input id="edit-username"></input></field-component>
+    <field-component label="Username"><input id="edit-username" list="usernamelist"></input></field-component>
     <div style="display: flex">
       <field-component label="Password"><input id="edit-password"></input></field-component>
       <button class="randomize-pwd">Gen</button>
     </div>
-    <field-component label="Tags"><input id="edit-tags"></input></field-component>
+    <field-component label="Tags"><input id="edit-tags" list="taglist"></input></field-component>
 
     <div id="history">
       <p>Password history (most recent in top):</p>
@@ -176,6 +176,9 @@ template.innerHTML = `
       <textarea id="import-json"></textarea>
     </div>
   </dialog-component>
+
+  <datalist id="taglist"></datalist>
+  <datalist id="usernamelist"></datalist>
 `;
 
 class Element extends HTMLElement {
@@ -506,6 +509,9 @@ class Element extends HTMLElement {
     `).join("")
 
     this.shadowRoot.getElementById("add-password-btn").classList.remove("hidden")
+
+    this.shadowRoot.getElementById("taglist").innerHTML = [...new Set(this.passwords.filter(p => p.tags && p.tags.length > 0).map(p => p.tags).flat())].map(t => `<option id="${t}">${t}</option>`).join("")
+    this.shadowRoot.getElementById("usernamelist").innerHTML = [...new Set(this.passwords.filter(p => p.username).map(p => p.username))].map(t => `<option id="${t}">${t}</option>`).join("")
   }
   async pwTabClick(e){
     let div = e.target.closest("tr.result");
