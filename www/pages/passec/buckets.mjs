@@ -147,7 +147,7 @@ template.innerHTML = `
     <field-component label="Tags"><input id="edit-tags"></input></field-component>
 
     <div id="history">
-      <p>Previous passwords (most recent in top):</p>
+      <p>Password history (most recent in top):</p>
       <table>
         <tbody id="historybody">
         </tbody>
@@ -313,11 +313,13 @@ class Element extends HTMLElement {
     this.shadowRoot.getElementById("edit-password").value = password.password
     this.shadowRoot.getElementById("edit-tags").value = password.tags.join(", ")
 
-    this.shadowRoot.getElementById("historybody").innerHTML = this.entries.filter(e => e.decrypted && e.decrypted.id == password.id && e.decrypted.password && e.decrypted.password != password.password)
+    this.shadowRoot.getElementById("historybody").innerHTML = this.entries.filter(e => e.decrypted && e.decrypted.id == password.id && e.decrypted.password)
                                                                           .map(e => `<tr><td>${e.decrypted.password}</td></tr>`)
                                                                           .reverse()
                                                                           .join("")
-    this.shadowRoot.getElementById("history").classList.toggle("hidden", !!!this.shadowRoot.getElementById("historybody").innerHTML)
+
+    console.log(this.entries.find(e => e.decrypted && e.decrypted.password && e.decrypted.password != password.password))
+    this.shadowRoot.getElementById("history").classList.toggle("hidden", !this.entries.find(e => e.decrypted && e.decrypted.id == password.id && e.decrypted.password && e.decrypted.password != password.password))
 
     showDialog(dialog, {
       show: () => this.shadowRoot.getElementById("edit-title").focus(),
