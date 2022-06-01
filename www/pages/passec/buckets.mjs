@@ -36,7 +36,7 @@ template.innerHTML = `
     #flex > div{
       border: 1px solid #aaa;
       border-radius: 7px;
-      box-shadow: 3px 3px 10px gray;
+      box-shadow: 3px 3px 10px var(--shadow-on-back);
       padding: 10px;
     }
     .bucket{
@@ -48,7 +48,7 @@ template.innerHTML = `
       border-right: solid 1px transparent;
       user-select: none;
     }
-    .bucket:hover{background-color: #ccc; box-shadow: 0px 0px 5px #aaa;}
+    .bucket:hover{ box-shadow: 0px 0px 5px #aaa;}
     .bucket.selected{
       border-left: solid 1px gray;
       border-right: solid 1px gray;
@@ -71,6 +71,7 @@ template.innerHTML = `
       pointer-events: none;
       transform: translateX(5px);
       transition: opacity 150ms ease-in-out, transform 150ms ease-in-out;
+      filter: invert(1);
     }
     .right-action-buttons:hover{
       opacity: 1
