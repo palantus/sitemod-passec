@@ -477,12 +477,15 @@ class Element extends HTMLElement {
   refreshPasswordsView(){
     this.decryptPasswords()
     this.passwords = []
+    let addedIds = new Set()
     for(let e of this.entries){
       if(!e.decrypted) continue;
       let entry = e.decrypted;
       switch(entry.type){
         case "new":
+          if(addedIds.has(entry.id)) break;
           this.passwords.push({...entry})
+          addedIds.add(entry.id)
           break;
         case "edit":
           let p = this.passwords.find(p => p.id == entry.id)
