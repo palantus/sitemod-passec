@@ -318,7 +318,7 @@ class Element extends HTMLElement {
     this.shadowRoot.getElementById("edit-tags").value = password.tags.join(", ")
 
     this.shadowRoot.getElementById("historybody").innerHTML = this.entries.filter(e => e.decrypted && e.decrypted.id == password.id && e.decrypted.password)
-                                                                          .map(e => `<tr><td>${e.decrypted.password}</td><td>${e.timestamp?.substring(0, 10)||""}</td></tr>`)
+                                                                          .map(e => `<tr><td>${e.decrypted.password}</td><td title="${e.timestamp?.replace("T", " ").substring(0, 19)}">${e.timestamp?.substring(0, 10)||""}</td></tr>`)
                                                                           .reverse()
                                                                           .join("")
 
