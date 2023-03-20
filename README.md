@@ -1,7 +1,5 @@
 # Passec
 
-Passec is a password manager.
-
 ## What is Passec?
 Passec is a password manager which is designed to be very easy to use across all platforms and, of course, very secure.
 
