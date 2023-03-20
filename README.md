@@ -18,5 +18,5 @@ A bucket is a list of entries. An entry can be either an added password, a trash
 
 Every entry is entirely encrypted and without the password, it is not even possible to know which type of entry it is. Whenever you synchronize with the server, every entry the server doesn't have gets stored in our database. These entries will then be synchronized to other clients accessing that bucket. When you enter a password for a bucket, the client will attempt to decrypt every entry. Only those successful will be used to generate your list of passwords.
 
-## Can I backup my passwords?</h3>
+## Can I backup my passwords?
 Yes. It is possible to import/export passwords from the user interface.
