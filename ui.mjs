@@ -1,8 +1,8 @@
 export let menu = [
   {
-    title: "Passwords",
+    title: "Me",
     items: [
-      {title: "Buckets", path: "/passec/buckets", permission: "passec.read"}
+      {title: "Passwords", path: "/passec/buckets", permission: "passec.read"}
     ]
   }
 ]
