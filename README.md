@@ -1,2 +1,3 @@
-# sitemod-passec
-Passec for sitecore
+# Passec
+
+Passec is a password manager.
