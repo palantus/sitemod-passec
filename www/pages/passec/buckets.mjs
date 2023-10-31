@@ -9,7 +9,7 @@ import "../../components/field.mjs"
 import "../../components/field-edit.mjs"
 import "../../components/action-bar-menu.mjs"
 import {on, off, fire} from "../../system/events.mjs"
-import {state, pushStateQuery, apiURL} from "../../system/core.mjs"
+import {state, pushStateQuery, apiURL, stylesheets} from "../../system/core.mjs"
 import {showDialog} from "../../components/dialog.mjs"
 import { promptDialog, confirmDialog } from "../../components/dialog.mjs"
 import "../../components/data/searchhelp.mjs"
@@ -19,8 +19,6 @@ import {fireSelfSync, onMessage, offMessage} from "../../system/message.mjs"
 
 const template = document.createElement('template');
 template.innerHTML = `
-  <link rel='stylesheet' href='/css/global.css'>
-  <link rel='stylesheet' href='/css/searchresults.css'>
   <style>
     #container{
         position: relative;
@@ -186,7 +184,8 @@ class Element extends HTMLElement {
   constructor() {
     super();
 
-    this.attachShadow({ mode: 'open' });
+    this.attachShadow({ mode: 'open' })
+        .adoptedStyleSheets = [stylesheets.global, stylesheets.searchresults];
     this.shadowRoot.appendChild(template.content.cloneNode(true));
 
     this.refreshData = this.refreshData.bind(this);
