@@ -73,6 +73,9 @@ template.innerHTML = `
     td.pw-title{cursor: pointer; color: var(--link);}
     #key-container{ border-bottom: 1px solid #ccc; padding-bottom: 8px;}
     .password button{padding: 3px;}
+    td.pw-actions{
+      min-width: 50px;
+    }
     td.pw-actions span{
       margin-right: 10px;
       display: inline-block;
