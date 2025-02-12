@@ -557,11 +557,12 @@ class Element extends HTMLElement {
     if(!password) return;
     if(!(await confirmDialog(`Are you sure that you want to delete the password titled "${password.title}"?`))) return;
     this.addEntry({type: "del", id})
+    dialog.cancel();
   }
   
   async copyPasswordClicked(){
-    let dialog = this.shadowRoot.getElementById("edit-password-dialog")
-    let id = dialog.dataset.pwId;
+    let dialogEdit = this.shadowRoot.getElementById("edit-password-dialog")
+    let id = dialogEdit.dataset.pwId;
     if(!id) return;
     let pw = this.entries.find(e => e.decrypted?.id == id)?.decrypted;
     if(!pw) return;
