@@ -354,7 +354,6 @@ class Element extends HTMLElement {
     this.shadowRoot.getElementById("history").classList.toggle("hidden", !this.entries.find(e => e.decrypted && e.decrypted.id == password.id && e.decrypted.password && e.decrypted.password != password.password))
 
     showDialog(dialog, {
-      show: () => this.shadowRoot.getElementById("edit-title").focus(),
       ok: async (val) => {
         if(val.title === password.title) delete val.title;
         if(val.username === password.username) delete val.username;
