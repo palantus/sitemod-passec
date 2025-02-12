@@ -567,7 +567,8 @@ class Element extends HTMLElement {
     if(!id) return;
     let password = this.entries.find(e => e.decrypted?.id == id)?.decrypted;
     if(!password) return;
-    if(!(await confirmDialog(`Are you sure that you want to delete the password titled "${password.title}"?`))) return;
+    let title = this.shadowRoot.getElementById("edit-title").value || "N/A";
+    if(!(await confirmDialog(`Are you sure that you want to delete the password titled "${title}"?`))) return;
     this.addEntry({type: "del", id})
     dialog.cancel();
   }
