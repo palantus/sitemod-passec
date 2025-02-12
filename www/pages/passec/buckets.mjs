@@ -35,21 +35,33 @@ template.innerHTML = `
       border: 1px solid #aaa;
       border-radius: 7px;
       box-shadow: 3px 3px 10px var(--shadow-on-back);
+    }
+    #bucket-container{
+      padding: 0px;
+      padding-bottom: 10px;
+    }
+    #bucket-container h2{
       padding: 10px;
     }
     .bucket{
       cursor:pointer;
       border-radius: 5px;
       padding: 5px;
-      margin: 3px;
+      padding-left: 10px;
+      padding-right: 10px;
+      margin: 0px;
       border-left: solid 1px transparent;
       border-right: solid 1px transparent;
       user-select: none;
     }
-    .bucket:hover{ box-shadow: 0px 0px 5px #aaa;}
+    .bucket:hover{
+        background-color: var(--dark-hover-back);
+    }
     .bucket.selected{
-      border-left: solid 1px gray;
-      border-right: solid 1px gray;
+      background: var(--accent-back);
+    }
+    #passwords-container{
+      padding: 10px;
     }
     #passwords-tab{margin-top: 5px;}
     #passwords-tab td:not(:last-child){
@@ -58,6 +70,7 @@ template.innerHTML = `
     #passwords-tab td:last-child{
       white-space: nowrap;
     }
+    td.pw-title{cursor: pointer; color: var(--link);}
     #key-container{ border-bottom: 1px solid #ccc; padding-bottom: 8px;}
     .password button{padding: 3px;}
 
@@ -145,6 +158,10 @@ template.innerHTML = `
     </div>
     <field-component label="Tags"><input id="edit-tags" list="taglist"></input></field-component>
 
+    <br>
+    <button class="styled" id="delete-btn">Delete</button>
+    <button class="styled" id="move-btn">Move</button>
+
     <div id="history">
       <p>Password history (most recent in top):</p>
       <table>
@@ -196,6 +213,7 @@ class Element extends HTMLElement {
     this.queryChanged = this.queryChanged.bind(this);
     this.bucketTabClick = this.bucketTabClick.bind(this)
     this.pwTabClick = this.pwTabClick.bind(this)
+    this.deletePasswordClicked = this.deletePasswordClicked.bind(this);
     this.keyChanged = this.keyChanged.bind(this)
     this.checkForNewEntries = this.checkForNewEntries.bind(this)
     
@@ -205,6 +223,7 @@ class Element extends HTMLElement {
     this.shadowRoot.getElementById("export-btn").addEventListener("click", this.exportPasswords)
     this.shadowRoot.getElementById('buckets').addEventListener("click", this.bucketTabClick)
     this.shadowRoot.getElementById('passwords').addEventListener("click", this.pwTabClick)
+    this.shadowRoot.getElementById('delete-btn').addEventListener("click", this.deletePasswordClicked);
     this.shadowRoot.getElementById('key').addEventListener("change", this.keyChanged)
     this.shadowRoot.getElementById('cache-key').addEventListener("change", this.keyChanged)
     this.shadowRoot.getElementById('import-type').addEventListener("change", () => {
@@ -310,6 +329,7 @@ class Element extends HTMLElement {
 
   editPassword(password){
     let dialog = this.shadowRoot.getElementById("edit-password-dialog")
+    dialog.dataset.pwId = password.id;
     
     this.shadowRoot.getElementById("edit-title").value = password.title
     this.shadowRoot.getElementById("edit-username").value = password.username
@@ -321,7 +341,6 @@ class Element extends HTMLElement {
                                                                           .reverse()
                                                                           .join("")
 
-    console.log(this.entries.find(e => e.decrypted && e.decrypted.password && e.decrypted.password != password.password))
     this.shadowRoot.getElementById("history").classList.toggle("hidden", !this.entries.find(e => e.decrypted && e.decrypted.id == password.id && e.decrypted.password && e.decrypted.password != password.password))
 
     showDialog(dialog, {
@@ -504,10 +523,10 @@ class Element extends HTMLElement {
                                                                           .sort((a, b) => a.title?.toLowerCase() < b.title?.toLowerCase() ? -1 : 1)
                                                                           .map(p => `
       <tr class="result password" data-id="${p.id}">
-        <td>${p.title}</td>
+        <td class="pw-title">${p.title||"N/A"}</td>
         <td>${p.username}</td>
         <td>${p.tags.join(", ")}</td>
-        <td><button class="copy-pw">Copy</button><button class="edit-pw">Edit</button><button class="del-pw">Delete</button></td>
+        <td class="pw-actions"><button class="copy-pw">Copy</button></td>
       </tr>
     `).join("")
 
@@ -519,15 +538,24 @@ class Element extends HTMLElement {
   async pwTabClick(e){
     let div = e.target.closest("tr.result");
     let id = div.getAttribute("data-id")
+    if(!id) return;
     let p = this.passwords.find(p => p.id == id)
     if(e.target.classList.contains("copy-pw")){
       navigator.clipboard.writeText(p.password)
-    } if(e.target.classList.contains("edit-pw")){
+    } else if(e.target.classList.contains("pw-title")){
       this.editPassword(p)
-    } else if(e.target.classList.contains("del-pw")){
-      if(!(await confirmDialog(`Are you sure that you want to delete the password titled "${p.title}"?`))) return;
-      this.addEntry({type: "del", id})
     }
+
+  }
+
+  async deletePasswordClicked(){
+    let dialog = this.shadowRoot.getElementById("edit-password-dialog")
+    let id = dialog.dataset.pwId;
+    if(!id) return;
+    let password = this.entries.find(e => e.decrypted?.id == id)?.decrypted;
+    if(!password) return;
+    if(!(await confirmDialog(`Are you sure that you want to delete the password titled "${password.title}"?`))) return;
+    this.addEntry({type: "del", id})
   }
 
   connectedCallback() {
