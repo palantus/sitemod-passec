@@ -10,8 +10,7 @@ import "../../components/field-edit.mjs"
 import "../../components/action-bar-menu.mjs"
 import {on, off, fire} from "../../system/events.mjs"
 import {state, pushStateQuery, apiURL, stylesheets} from "../../system/core.mjs"
-import {showDialog} from "../../components/dialog.mjs"
-import { promptDialog, confirmDialog } from "../../components/dialog.mjs"
+import { promptDialog, confirmDialog, showDialog, alertDialog} from "../../components/dialog.mjs"
 import "../../components/data/searchhelp.mjs"
 import CryptoJS from "../../libs/aes.js"
 import {uuidv4} from "../../libs/uuid.mjs"
@@ -139,7 +138,7 @@ template.innerHTML = `
     </div>
   </div>
   
-  <dialog-component title="New password" id="new-password-dialog">
+  <dialog-component label="New password" id="new-password-dialog">
     <field-component label="Title"><input id="add-title"></input></field-component>
     <field-component label="Username"><input id="add-username" list="usernamelist"></input></field-component>
     <div style="display: flex">
@@ -149,7 +148,7 @@ template.innerHTML = `
     <field-component label="Tags"><input id="add-tags" list="taglist"></input></field-component>
   </dialog-component>
   
-  <dialog-component title="Edit password" id="edit-password-dialog">
+  <dialog-component label="Edit password" id="edit-password-dialog">
     <field-component label="Title"><input id="edit-title"></input></field-component>
     <field-component label="Username"><input id="edit-username" list="usernamelist"></input></field-component>
     <div style="display: flex">
@@ -159,8 +158,8 @@ template.innerHTML = `
     <field-component label="Tags"><input id="edit-tags" list="taglist"></input></field-component>
 
     <br>
-    <button class="styled" id="delete-btn">Delete</button>
-    <button class="styled" id="move-btn">Move</button>
+    <button class="styled" id="delete-btn" title="Delete the current password">Delete</button>
+    <button class="styled" id="copy-btn" title="Duplicate password">Duplicate</button>
 
     <div id="history">
       <p>Password history (most recent in top):</p>
@@ -171,7 +170,7 @@ template.innerHTML = `
     </div>
   </dialog-component>
 
-  <dialog-component title="New bucket" id="new-bucket-dialog">
+  <dialog-component label="New bucket" id="new-bucket-dialog">
     <field-component label="Title"><input id="new-bucket-title"></input></field-component>
   </dialog-component>
 
@@ -214,6 +213,7 @@ class Element extends HTMLElement {
     this.bucketTabClick = this.bucketTabClick.bind(this)
     this.pwTabClick = this.pwTabClick.bind(this)
     this.deletePasswordClicked = this.deletePasswordClicked.bind(this);
+    this.copyPasswordClicked = this.copyPasswordClicked.bind(this);
     this.keyChanged = this.keyChanged.bind(this)
     this.checkForNewEntries = this.checkForNewEntries.bind(this)
     
@@ -224,6 +224,7 @@ class Element extends HTMLElement {
     this.shadowRoot.getElementById('buckets').addEventListener("click", this.bucketTabClick)
     this.shadowRoot.getElementById('passwords').addEventListener("click", this.pwTabClick)
     this.shadowRoot.getElementById('delete-btn').addEventListener("click", this.deletePasswordClicked);
+    this.shadowRoot.getElementById('copy-btn').addEventListener("click", this.copyPasswordClicked);
     this.shadowRoot.getElementById('key').addEventListener("change", this.keyChanged)
     this.shadowRoot.getElementById('cache-key').addEventListener("change", this.keyChanged)
     this.shadowRoot.getElementById('import-type').addEventListener("change", () => {
@@ -453,12 +454,12 @@ class Element extends HTMLElement {
     this.refreshPasswordsView()
   }
 
-  decryptPasswords(){
-    if(!this.key) return;
-    for(let entry of this.entries){
+  decryptPasswords(entries, key){
+    if(!key) return;
+    for(let entry of entries){
       if(entry.decrypted !== undefined) continue;
       try{
-        let decrypted = CryptoJS.AES.decrypt(entry.content, this.key);
+        let decrypted = CryptoJS.AES.decrypt(entry.content, key);
         decrypted = decrypted.toString(CryptoJS.enc.Utf8);
         if(decrypted.substring(0, 1) == "{"){
           entry.decrypted = JSON.parse(decrypted);
@@ -493,7 +494,7 @@ class Element extends HTMLElement {
   }
 
   refreshPasswordsView(){
-    this.decryptPasswords()
+    this.decryptPasswords(this.entries, this.key)
     this.passwords = []
     let addedIds = new Set()
     for(let e of this.entries){
@@ -556,6 +557,35 @@ class Element extends HTMLElement {
     if(!password) return;
     if(!(await confirmDialog(`Are you sure that you want to delete the password titled "${password.title}"?`))) return;
     this.addEntry({type: "del", id})
+  }
+  
+  async copyPasswordClicked(){
+    let dialog = this.shadowRoot.getElementById("edit-password-dialog")
+    let id = dialog.dataset.pwId;
+    if(!id) return;
+    let pw = this.entries.find(e => e.decrypted?.id == id)?.decrypted;
+    if(!pw) return;
+    
+    let bucketId = await promptDialog("Select target bucket. Note that history won't be copied.", ""+this.curBucketId, {lookup: "passec-bucket", type: "select", title: "Copy password"});
+    if(!bucketId) return;
+
+    let title = this.shadowRoot.getElementById("edit-title").value || "N/A";
+    let username = this.shadowRoot.getElementById("edit-username").value;
+    let password = this.shadowRoot.getElementById("edit-password").value;
+    let tags = this.shadowRoot.getElementById("edit-tags").value.split(",").map(t => t.trim());
+    let obj = {type: "new", title, username, password, tags, id: uuidv4()}
+
+    if(bucketId == this.curBucketId) {
+      this.addEntry(obj);
+      return;
+    }
+
+    let storedKey = localStorage.getItem(`passec-bucket-${bucketId}-key`);
+    if(!storedKey) return alertDialog("For this to work, you need to cache the key for the destination bucket");
+    
+    var encrypted = CryptoJS.AES.encrypt(JSON.stringify(obj), this.key).toString();
+    let response = await api.post(`passec/buckets/${bucketId}/entries`, {content: encrypted});
+    if(!response?.length || response.length < 1) return alertDialog("An error occured saving to the other bucket");
   }
 
   connectedCallback() {
