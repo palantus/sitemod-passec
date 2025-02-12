@@ -15,6 +15,7 @@ import "../../components/data/searchhelp.mjs"
 import CryptoJS from "../../libs/aes.js"
 import {uuidv4} from "../../libs/uuid.mjs"
 import {fireSelfSync, onMessage, offMessage} from "../../system/message.mjs"
+import Toast from "../../components/toast.mjs"
 
 const template = document.createElement('template');
 template.innerHTML = `
@@ -72,6 +73,11 @@ template.innerHTML = `
     td.pw-title{cursor: pointer; color: var(--link);}
     #key-container{ border-bottom: 1px solid #ccc; padding-bottom: 8px;}
     .password button{padding: 3px;}
+    td.pw-actions span{
+      margin-right: 10px;
+      display: inline-block;
+      cursor: pointer;
+    }
 
     .right-action-buttons{
       position: absolute;
@@ -127,9 +133,9 @@ template.innerHTML = `
           <thead>
             <tr>
               <th>Title</th>
+              <th>Copy</th>
               <th>Username</th>
               <th>Tags</th>
-              <th></th>
           </thead>
           <tbody id="passwords">
           </tbody>
@@ -525,9 +531,9 @@ class Element extends HTMLElement {
                                                                           .map(p => `
       <tr class="result password" data-id="${p.id}">
         <td class="pw-title">${p.title||"N/A"}</td>
+        <td class="pw-actions"><span class="copy-pw" title="Copy password to clipboard">#</span><span class="copy-username" title="Copy username">&#9787</span></td>
         <td>${p.username}</td>
         <td>${p.tags.join(", ")}</td>
-        <td class="pw-actions"><button class="copy-pw">Copy</button></td>
       </tr>
     `).join("")
 
@@ -543,6 +549,10 @@ class Element extends HTMLElement {
     let p = this.passwords.find(p => p.id == id)
     if(e.target.classList.contains("copy-pw")){
       navigator.clipboard.writeText(p.password)
+      new Toast({text: "Password inserted into clipboard"})
+    } else if(e.target.classList.contains("copy-username")){
+      navigator.clipboard.writeText(p.username)
+      new Toast({text: "Username inserted into clipboard"})
     } else if(e.target.classList.contains("pw-title")){
       this.editPassword(p)
     }
