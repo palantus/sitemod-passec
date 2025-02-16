@@ -443,6 +443,9 @@ class Element extends HTMLElement {
       this.loadBucket(id)
     }
     this.curTagFilter = null;
+    this.lastQuery = "";
+    this.shadowRoot.getElementById('search').value = "";
+    pushStateQuery(undefined);
   }
   
   async tagsTabClick(e){
