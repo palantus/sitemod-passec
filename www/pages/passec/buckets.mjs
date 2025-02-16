@@ -118,15 +118,13 @@ template.innerHTML = `
   <div id="container">
     
     <div id="flex">
-      <div id="left-pane">
-        <div id="bucket-container">
-          <h2>Buckets</h2>
-          <div id="buckets"></div>
-        </div>
-        <div id="tags-container" class="hidden">
-          <h2>Tags</h2>
-          <div id="tags"></div>
-        </div>
+      <div id="bucket-container">
+        <h2>Buckets</h2>
+        <div id="buckets"></div>
+      </div>
+      <div id="tags-container" class="hidden">
+        <h2>Tags</h2>
+        <div id="tags"></div>
       </div>
       <div id="passwords-container" class="hidden">
         <h2>Passwords in <span id="bucket-title"></span></h2>
