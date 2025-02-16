@@ -36,7 +36,7 @@ template.innerHTML = `
       border-radius: 7px;
       box-shadow: 3px 3px 10px var(--shadow-on-back);
     }
-    #bucket-container{
+    #bucket-container, #tags-container{
       padding: 0px;
       padding-bottom: 10px;
     }
