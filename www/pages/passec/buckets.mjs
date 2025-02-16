@@ -40,13 +40,13 @@ template.innerHTML = `
       padding: 0px;
       padding-bottom: 10px;
     }
-    #bucket-container, #tags-container h2{
+    #bucket-container h2, #tags-container h2{
       padding: 10px;
     }
     .bucket, .tag{
       cursor:pointer;
       border-radius: 5px;
-      padding: 5px;
+      padding: 3px;
       padding-left: 10px;
       padding-right: 10px;
       margin: 0px;
