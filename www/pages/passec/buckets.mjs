@@ -534,6 +534,7 @@ class Element extends HTMLElement {
     for(let e of this.entries){
       if(!e.decrypted) continue;
       let entry = e.decrypted;
+      entry.tags = entry.tags?.filter(t => !!t);
       switch(entry.type){
         case "new":
           if(addedIds.has(entry.id)) break;
@@ -555,7 +556,7 @@ class Element extends HTMLElement {
     }
 
     this.shadowRoot.getElementById("passwords").innerHTML = this.passwords.filter(p => !this.lastQuery || (p.title+p.password+p.username+p.tags.join("")).toLowerCase().includes(this.lastQuery))
-                                                                          .filter(p => !this.curTagFilter || p.tags.includes(this.curTagFilter))
+                                                                          .filter(p => this.curTagFilter === null || (!this.curTagFilter && p.tags.length == 0) || p.tags.includes(this.curTagFilter))
                                                                           .sort((a, b) => a.title?.toLowerCase() < b.title?.toLowerCase() ? -1 : 1)
                                                                           .map(p => `
       <tr class="result password" data-id="${p.id}">
@@ -567,7 +568,8 @@ class Element extends HTMLElement {
     `).join("")
 
     let uniqueTags = [...new Set(this.passwords.map(p => p.tags?.filter(t => !!t)).flat())];
-    this.shadowRoot.getElementById("tags").innerHTML = uniqueTags.map(t => `<div class="tag${t == this.curTagFilter ? " selected":""}" data-tag="${t}">${t}</div>`).join("");
+    uniqueTags.push("");
+    this.shadowRoot.getElementById("tags").innerHTML = uniqueTags.sort().map(t => `<div class="tag${t == this.curTagFilter ? " selected":""}" data-tag="${t}">${t||"&lt;none&gt;"} (${this.passwords.filter(p => !t ? p.tags.length == 0 : p.tags.includes(t)).length})</div>`).join("");
 
     this.shadowRoot.getElementById("add-password-btn").classList.remove("hidden")
 
