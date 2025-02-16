@@ -40,10 +40,10 @@ template.innerHTML = `
       padding: 0px;
       padding-bottom: 10px;
     }
-    #bucket-container h2{
+    #bucket-container, #tags-container h2{
       padding: 10px;
     }
-    .bucket{
+    .bucket, .tag{
       cursor:pointer;
       border-radius: 5px;
       padding: 5px;
@@ -54,10 +54,10 @@ template.innerHTML = `
       border-right: solid 1px transparent;
       user-select: none;
     }
-    .bucket:hover{
+    .bucket:hover, .tag:hover{
         background-color: var(--dark-hover-back);
     }
-    .bucket.selected{
+    .bucket.selected, .tag.selected{
       background: var(--accent-back);
     }
     #passwords-container{
@@ -118,9 +118,15 @@ template.innerHTML = `
   <div id="container">
     
     <div id="flex">
-      <div id="bucket-container">
-        <h2>Buckets</h2>
-        <div id="buckets"></div>
+      <div id="left-pane">
+        <div id="bucket-container">
+          <h2>Buckets</h2>
+          <div id="buckets"></div>
+        </div>
+        <div id="tags-container" class="hidden">
+          <h2>Tags</h2>
+          <div id="tags"></div>
+        </div>
       </div>
       <div id="passwords-container" class="hidden">
         <h2>Passwords in <span id="bucket-title"></span></h2>
@@ -220,6 +226,7 @@ class Element extends HTMLElement {
     this.exportPasswords = this.exportPasswords.bind(this);
     this.queryChanged = this.queryChanged.bind(this);
     this.bucketTabClick = this.bucketTabClick.bind(this)
+    this.tagsTabClick = this.tagsTabClick.bind(this)
     this.pwTabClick = this.pwTabClick.bind(this)
     this.deletePasswordClicked = this.deletePasswordClicked.bind(this);
     this.copyPasswordClicked = this.copyPasswordClicked.bind(this);
@@ -231,6 +238,7 @@ class Element extends HTMLElement {
     this.shadowRoot.getElementById("import-btn").addEventListener("click", this.importPasswords)
     this.shadowRoot.getElementById("export-btn").addEventListener("click", this.exportPasswords)
     this.shadowRoot.getElementById('buckets').addEventListener("click", this.bucketTabClick)
+    this.shadowRoot.getElementById('tags').addEventListener("click", this.tagsTabClick)
     this.shadowRoot.getElementById('passwords').addEventListener("click", this.pwTabClick)
     this.shadowRoot.getElementById('delete-btn').addEventListener("click", this.deletePasswordClicked);
     this.shadowRoot.getElementById('copy-btn').addEventListener("click", this.copyPasswordClicked);
@@ -328,7 +336,7 @@ class Element extends HTMLElement {
         title: this.shadowRoot.getElementById("add-title").value || "N/A",
         username: this.shadowRoot.getElementById("add-username").value,
         password: this.shadowRoot.getElementById("add-password").value,
-        tags: this.shadowRoot.getElementById("add-tags").value.split(",").map(t => t.trim()),
+        tags: this.shadowRoot.getElementById("add-tags").value.split(",").map(t => t.trim()).filter(t => !!t),
         type: "new"
       }},
       close: () => {
@@ -434,6 +442,22 @@ class Element extends HTMLElement {
       this.shadowRoot.getElementById("passwords").innerHTML = ""
       this.loadBucket(id)
     }
+    this.curTagFilter = null;
+  }
+  
+  async tagsTabClick(e){
+    let div = e.target.closest("div.tag");
+    let tag = div.getAttribute("data-tag")
+
+    if(tag == this.curTagFilter){
+      this.curTagFilter = null;
+      this.shadowRoot.querySelectorAll(`div.tag`).forEach(e => e.classList.remove("selected"))
+    } else {
+      this.curTagFilter = tag;
+      this.shadowRoot.querySelectorAll(`div.tag:not([data-tag="${tag}"])`).forEach(e => e.classList.remove("selected"))
+      div.classList.add("selected")
+    }
+    this.refreshPasswordsView();
   }
 
   async loadBucket(id){
@@ -460,6 +484,7 @@ class Element extends HTMLElement {
     }
 
     this.refreshPasswordsView()
+    this.shadowRoot.getElementById("tags-container").classList.remove("hidden");
   }
 
   decryptPasswords(entries, key){
@@ -504,7 +529,7 @@ class Element extends HTMLElement {
   refreshPasswordsView(){
     this.decryptPasswords(this.entries, this.key)
     this.passwords = []
-    let addedIds = new Set()
+    let addedIds = new Set();
     for(let e of this.entries){
       if(!e.decrypted) continue;
       let entry = e.decrypted;
@@ -529,6 +554,7 @@ class Element extends HTMLElement {
     }
 
     this.shadowRoot.getElementById("passwords").innerHTML = this.passwords.filter(p => !this.lastQuery || (p.title+p.password+p.username+p.tags.join("")).toLowerCase().includes(this.lastQuery))
+                                                                          .filter(p => !this.curTagFilter || p.tags.includes(this.curTagFilter))
                                                                           .sort((a, b) => a.title?.toLowerCase() < b.title?.toLowerCase() ? -1 : 1)
                                                                           .map(p => `
       <tr class="result password" data-id="${p.id}">
@@ -538,6 +564,9 @@ class Element extends HTMLElement {
         <td>${p.tags.join(", ")}</td>
       </tr>
     `).join("")
+
+    let uniqueTags = [...new Set(this.passwords.map(p => p.tags?.filter(t => !!t)).flat())];
+    this.shadowRoot.getElementById("tags").innerHTML = uniqueTags.map(t => `<div class="tag${t == this.curTagFilter ? " selected":""}" data-tag="${t}">${t}</div>`).join("");
 
     this.shadowRoot.getElementById("add-password-btn").classList.remove("hidden")
 
