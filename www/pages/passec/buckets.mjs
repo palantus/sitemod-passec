@@ -204,6 +204,17 @@ template.innerHTML = `
       <textarea id="import-json"></textarea>
     </div>
   </dialog-component>
+  
+  <dialog-component title="Export passwords" id="export-dialog">
+    <select id="export-format">
+      <option value="passec" selected>Passec format</option>
+      <option value="bitbucket">BitBucket json format</option>
+    </select>
+    <br>
+    <br>
+    <label for="export-encrypted">Encrypt</label>
+    <input type="checkbox" id="export-encrypted"></input>
+  </dialog-component>
 
   <datalist id="taglist"></datalist>
   <datalist id="usernamelist"></datalist>
@@ -412,9 +423,53 @@ class Element extends HTMLElement {
   }
   
   async exportPasswords(){
-    if(!(await confirmDialog(`This will open a new window with a JSON file. Download that as a backup.`))) return;
-    let {token} = await api.get("me/token")
-    window.open(`${apiURL()}/passec/buckets?token=${token}`)
+    let dialog = this.shadowRoot.getElementById("export-dialog")
+    
+    showDialog(dialog, {
+      show: () => this.shadowRoot.getElementById("export-format").focus(),
+      ok: async (val) => {
+        switch(val.format){
+          case "passec":
+            if(val.encrypted){
+              let {token} = await api.get("me/token");
+              window.open(`${apiURL()}/passec/buckets?token=${token}`);
+            } else {
+              let passwords = JSON.stringify(this.passwords, null, 2);
+              let bucketTitle = this.shadowRoot.getElementById("bucket-title").innerText;
+              this.download(`Passwords_${bucketTitle}_${new Date().toISOString().substring(0, 10)}.json`, passwords);
+            }
+            break;
+          case "bitbucket":
+            let bucketTitle = this.shadowRoot.getElementById("bucket-title").innerText;
+            let output = {encrypted: false, folders: [{id: bucketTitle, name: bucketTitle}], items: []};
+
+            output.items = this.passwords.map(p => ({
+              id: p.id, 
+              name: `${p.title}${(p.tags?.length||0) > 0 ? ` (${p.tags.join(", ")})` : ""}`,
+              folderId: bucketTitle, 
+              type: 1, 
+              notes: p.tags?.join(", ")||"",
+              login: {
+                username: p.username,
+                password: p.password,
+              }}));
+
+            let outputString = JSON.stringify(output, null, 2);
+            this.download(`Passwords_${bucketTitle}_${new Date().toISOString().substring(0, 10)}.json`, outputString);
+            break;
+        }
+      },
+      validate: (val) => 
+          (val.format == "bitbucket" && val.encrypted) ? "Encryption is not implemented for BitBucket format"
+        : true,
+      values: () => {return {
+        format: this.shadowRoot.getElementById("export-format").value,
+        encrypted: this.shadowRoot.getElementById("export-encrypted").checked,
+      }},
+      close: () => {
+        this.shadowRoot.querySelectorAll("field-component input").forEach(e => e.value = '')
+      }
+    })
   }
 
   async bucketTabClick(e){
@@ -656,7 +711,17 @@ class Element extends HTMLElement {
       retVal += charset.charAt(Math.floor(Math.random() * n));
     }
     return retVal;
-}
+  }
+
+  download(filename, content) {
+    const element = document.createElement('a');
+    element.setAttribute('href', window.URL.createObjectURL(new Blob([content], { type: 'text/plain' })));
+    element.setAttribute('download', filename);
+    element.style.display = 'none';
+    this.appendChild(element);
+    element.click();
+    this.removeChild(element);
+  }
 }
 
 window.customElements.define(elementName, Element);
