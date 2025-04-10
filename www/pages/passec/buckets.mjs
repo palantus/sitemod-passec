@@ -610,10 +610,31 @@ class Element extends HTMLElement {
       }
     }
 
-    this.shadowRoot.getElementById("passwords").innerHTML = this.passwords.filter(p => !this.lastQuery || (p.title+p.password+p.username+p.tags.join("")).toLowerCase().includes(this.lastQuery))
-                                                                          .filter(p => this.curTagFilter === null || (!this.curTagFilter && p.tags.length == 0) || p.tags.includes(this.curTagFilter))
-                                                                          .sort((a, b) => a.title?.toLowerCase() < b.title?.toLowerCase() ? -1 : 1)
-                                                                          .map(p => `
+    this.shadowRoot.getElementById("passwords").innerHTML = this.passwords.filter(p => {
+        if(!this.lastQuery) return true;
+        let qParts = this.lastQuery.split(" ");
+        for(let q of qParts){
+          if(q.indexOf(":") >= 0){
+            let [name, value] = q.split(":");
+            switch(name){
+              case "tag":
+                if(!p.tags.includes(value)) return false;
+                break;
+              case "user":
+              case "username":
+                if(!p.username.includes(value)) return false;
+                break;
+            }
+          } else {
+            if(!((p.title+p.password+p.username+p.tags.join("")).toLowerCase().includes(q)))
+              return false;
+          }
+        }
+        return true;
+      })
+      .filter(p => this.curTagFilter === null || (!this.curTagFilter && p.tags.length == 0) || p.tags.includes(this.curTagFilter))
+      .sort((a, b) => a.title?.toLowerCase() < b.title?.toLowerCase() ? -1 : 1)
+      .map(p => `
       <tr class="result password" data-id="${p.id}">
         <td class="pw-title">${p.title||"N/A"}</td>
         <td class="pw-actions"><span class="copy-pw" title="Copy password to clipboard">#</span><span class="copy-username" title="Copy username">&#9787</span></td>
